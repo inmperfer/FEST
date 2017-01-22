@@ -1,4 +1,4 @@
-##Programa de la asignatura
+## Contenido
 
 1. Programación en R
 2. Análisis exploratorio de datos con R
