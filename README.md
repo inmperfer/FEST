@@ -1,5 +1,4 @@
-# Fundamentos de Estadística y programación en R
-## Programa de la asignatura
+##Programa de la asignatura
 
 1. Programación en R
 2. Análisis exploratorio de datos con R
