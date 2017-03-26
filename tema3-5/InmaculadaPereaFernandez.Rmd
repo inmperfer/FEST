@@ -1,0 +1,613 @@
+---
+title: "FEST: Relación ejercicios Tema 3-5"
+author: "Alumno: Inmaculada Perea Fernández"
+date: "Enero 2017"
+output: pdf_document
+---
+  
+# 1 Obtención del conjunto de datos para el estudio
+
+
+Carga de los paquetes necesarios, si no los tiene instalados utilice el comando install.packages
+
+```{r, message=FALSE, warning=FALSE}
+library(AppliedPredictiveModeling)
+library(MASS)
+library(car)
+library(ISLR)
+library(leaps)
+library(caret)
+library(ggplot2)
+library(scatterplot3d)
+```
+
+Carga de los ficheros de datos: solTrainX, solTraintransX, solTrainY, solTestX, solTestXtrans, solTestY
+Visualiza las variables de los ficheros
+
+```{r}
+data(solubility)
+ls(pattern = "^solT")
+
+# Fichero solTrainX
+names(solTrainX)
+head(solTrainX,2)
+
+# Fichero solTrainY
+head(solTrainY)
+
+```
+
+
+# 2 Cuestiones sobre el fichero "EntrenamientoXY"
+
+## 2.1 Construye el fichero "EntrenamientoXY" de la siguiente forma:
+
+(a) Crea un fichero "EntrenamientoX" eliminando de "solTraintransX" todas las variables "FP..." que ocupan las 208 primeras posiciones.
+
+
+```{r}
+EntrenamientoX<-data.frame(solTrainXtrans[209:ncol(solTrainXtrans)])
+```
+
+(b) Construye el fichero "EntrenamientoXY" añadiendo a "EntrenamientoX" la variable "solTrainY". (Las variables de "EntrenamientoX" serán las variables regresoras y la variable "solTrainY" la variable respuesta).
+
+
+```{r}
+EntrenamientoXY<-data.frame(EntrenamientoX, solTrainY)
+str(EntrenamientoXY)
+```
+
+(c) Muestra los 5 primeros casos del fichero "EntrenamientoXY"
+
+
+```{r}
+head(EntrenamientoXY, 5)
+```
+
+## 2.2. Determina el modelo con una y dos variables regresoras que mejor explica la variable respuesta. Denominaremos a estos modelos M1 y M2, respectivamente.
+
+Utilizo el comando regsubsets para realizar la selección de modelos. 
+
+Elijo los siguientes parámetros:
+
+nvmax=2, porque el máximo tamaño del subconjunto a examinar es 2, ya que se pide el mejor modelo con 1 o 2 variables.
+
+nbest=1, porque quiero quedarme con el mejor modelo de cada tamaño.
+
+
+
+```{r}
+seleccion=regsubsets(solTrainY~., data=EntrenamientoXY, nvmax=2, nbest=1)
+summary(seleccion)
+```
+
+Tras examinar los resultados comprobamos que el mejor modelo con una variable es aquel que tiene como variable regresora **MolWeight**. Por tanto utilizaré la función lm para construir el modelo M1
+```{r}
+M1=lm(solTrainY~MolWeight, data=EntrenamientoXY)
+summary(M1)
+
+```
+
+Del mismo modo, observando los resultados obtenido con el comando regsubset, vemos que el mejor modelo con dos variables es el que tiene como variables explicativas **NumNonHAtoms** y **SurfaceArea1**
+```{r}
+M2=lm(solTrainY~NumNonHAtoms+SurfaceArea1, data=EntrenamientoXY)
+summary(M2)
+```
+
+
+## 2.3 En los modelos M1 y M2
+
+(a) Representa los gráficos de dispersión de los regresores frente a la respuesta.
+
+**Modelo M1**
+```{r}
+plot(solTrainY~MolWeight, data = EntrenamientoXY, xlab = "MolWeight", 
+     ylab = "Solubility", main="2.3.a (modelo M1): Gráfica de Dispersión MolWeight")
+abline(M1, col = "red")
+
+```
+
+**Modelo M2**
+
+Este modelo tiene dos variables regresoras, en primer lugar mostraremos la gráfica 3D con ambas variables regresoras, y luego se construirá las gráficas de dispersion de cada una de las variables explicativas frente a la variable respuesta. 
+```{r}
+scatterplot3d(EntrenamientoXY$NumNonHAtoms, EntrenamientoXY$SurfaceArea1, EntrenamientoXY$solTrainY,
+              xlab="NumNonAtoms", ylab="SurfaceArea1", zlab="solTrainY", 
+              highlight.3d=TRUE, col.axis = "blue", col.lab = "blue",
+              main="2.3.a (modelo M2): Gráfica dispersión 3D")
+
+plot(solTrainY~NumNonHAtoms, data = EntrenamientoXY, xlab = "NumNonHAtoms", 
+     ylab = "Solubility", main="1.3.a (modelo M2): Gráfica de Dispersión NumNonHAtoms")
+M2_1=lm(solTrainY~NumNonHAtoms, data = EntrenamientoXY)
+abline(M2_1, col = "red")
+
+plot(solTrainY~SurfaceArea1, data = EntrenamientoXY, xlab = "SurfaceArea1", 
+     ylab = "Solubility", main="2.3.a (modelo M2): Gráfica de Dispersión SurfaceArea1")
+M2_2=lm(solTrainY~SurfaceArea1, data = EntrenamientoXY)
+abline(M2_2, col = "red")
+
+```
+
+(b) Obtén los EMC de los parámetros, los intervalos de confianza para los parámetros y los p-valores asociados a los tests.
+
+**Modelo M1**
+```{r}
+# EMC de los parámetros y p-valores
+summary(M1)
+
+# Intervalos de confianza
+confint(M1, level=0.95)
+```
+
+**Modelo M2**
+```{r} 
+# EMC de los parámetros y p-valores
+summary(M2)
+
+# Intervalos de confianza
+confint(M2, level=0.95)
+```
+
+(c) Interpreta el significado de los EMC
+
+**Modelo M1 (lineal simple)**
+
+De forma genérica:  E(Yx) = Beta0 + Beta1 * x
+
+
+Beta0 = E (Yx=0) 
+
+Beta1 = E (Yx+1) - E (Yx)
+
+Por tanto:
+
+E(solTrainY) = Beta0 + Beta1 * MolWeight = 11.9542 - 2.8222 * MolWeight
+
+
+Beta0 = 11.9542. Es el valor esperado de la solubilidad cuando la variable MolWeight es igual a 0.
+
+
+Beta1 = - 2.8222. Es el incremento de la solubilidad cuando MolWeight aumenta en una unidad. Es decir, si MolWeight aumenta una unidad la solubilidad decrece 2.822215 unidades.
+
+
+**Modelo M2 (lineal múltiple)**
+
+E(solTrainY) = Beta0 + Beta1 * NumNonHAtoms + Beta2 * SurfaceArea1 =
+               
+               5.6189467 - 4.1433512 * NumNonHAtoms + 0.3313595 * SurfaceArea1
+               
+               
+Beta0 = 5.6189467, es el valor esperado de solTrainY cuando NumNonHAtoms y SurfaceArea1 toma el valor 0.
+
+Beta1 = - 4.1433512, muestra la relación entre solTrainY y NumNonHAtoms. El incremento en una unidad en NumNonHAtoms provoca un decremento de 4.1433512 unidades en solTrainY.
+
+Beta2 = 0.3313595, por tanto un incremento en una unidad en SurfaceArea1 provoca un aumento en 0.3313595 unidades en solTrainY
+
+
+
+(d) ¿Qué conclusiones se obtienen de los p-valores resultantes?
+
+**Modelo M1**
+
+El p-valor representa la probabilidad de que se cumpla la hipótesis nula, es decir, que la variable MolWeight no influya sobre la variable solTrainY. La probabilidad obtenida es mucho menor que 0.005. Por tanto, podemos rechazar la hipótesis nula (Beta1=0) y concluir que la variable MolWeight es significativa.
+
+
+**Modelo M2**
+
+Se obtiene una probabilidad << 0.005, por tanto podemos rechazar la hipotesis nula, que representa que las variables NumNonHAtoms y SurfaceArea1 no influyen sobre la variable objetivo solTrainY. Podemos concluir que ambas son significativas porque no tenemos evidencia de que sean nulas.
+
+
+
+## 2.4 En el modelo M2, determina la estimación del valor medio de la respuesta, el intervalo de confianza y el intervalo de predicción (ambos al 95%) correspondiente a los valores (3, 7) de los regresores. (Justifica que (3, 7) es un valor apropiado para realizar lo que se pide). Presentar los datos resultantes en una tabla del tipo (con sólo dos decimales)
+
+En primer lugar comprobamos si el valor (3,7) pertenece al rango y por tanto es apropiado
+
+```{r}
+# El valor 3 está en el rango
+range_numnonhatoms=range(EntrenamientoXY$NumNonHAtoms)
+range_numnonhatoms
+
+# El valor 7 está en el rango
+range_surfacearea1=range(EntrenamientoXY$SurfaceArea1)
+range_surfacearea1
+
+range_entrenamientoXY=range(EntrenamientoXY)
+range_entrenamientoXY
+
+plot(EntrenamientoXY$NumNonHAtoms, EntrenamientoXY$SurfaceArea1,
+     xlab="NumNonHAtoms", ylab="SurfaceArea1")
+```
+
+Se observa que ambos valores (3, 7) pertenecen al rango calculado, y por tanto se continua con los siguiente cálculos.
+
+
+```{r}
+# Valor medio de la respuesta
+# E(solTrainY) = 5.6189467 - 4.1433512 * NumNonHAtoms + 0.3313595* SurfaceArea1
+E1 =  5.6189467 - 4.1433512 * 3 + 0.3313595 * 7
+E1
+
+# Intervalo de confianza
+IC=as.data.frame(predict(M2, data.frame(NumNonHAtoms=3, SurfaceArea1=7), 
+                         interval="confidence", level=0.95))
+IC
+
+# Intervalo de predicción
+IP=as.data.frame(predict(M2, data.frame(NumNonHAtoms=3, SurfaceArea1=7), 
+                         interval="prediction", level=0.95))  
+IP
+```
+
+
+
+El intervalo de confianza informa del valor medio de Y para una X dada. Mientras que el Intervalo de predicción informa del rango de valores de Y para un X en particular
+
+Existen 2 diferencias entre el intervalo de predicción y de confianza
+
+1) El intervalo de predicción utiliza la desviación estándar en lugar del error estándar del intervalo de confianza.
+Como la desviación típica es siempre mayor que el error estándar, los intervalos predictivos serán siempre más amplios que los de confianza para el mismo nivel de incertidumbre. 
+
+2) Para calcular el intervalo de confianza tenemos que medir previamente el valor en una o varias muestras, mientras que el intervalo predictivo se calcula a priori, antes de extraer el sujeto o sujetos de la población.
+
+
+A continuación presentamos los resultados en el formato de tabla solicitado
+
+```{r}
+x <- data.frame(row.names=c("(3,7)"))
+# Valor de Estimacion
+x[,1] <- E1
+# Intervalo de confianza
+x[,2] <- paste(round(IC$lwr, 2) , ",", round(IC$upr, 2), sep = "")
+# Intervalo de predicción
+x[,3] <- paste(round(IP$lwr, 2) , ",", round(IP$upr, 2), sep = "")
+
+print(knitr::kable(x, format = "pandoc",
+                   col.names = c("Estimación", "IC(95%)", "IP(95%)"), align='c'))
+```
+
+
+
+## 2.5 Modelo con interacción
+
+(a) Construye el modelo M2int, resultante de añadir a M2 la interacción entre sus dos regresores.
+```{r}
+M2int=lm(solTrainY~NumNonHAtoms*SurfaceArea1, data=EntrenamientoXY)
+summary(M2int)
+```
+
+(b) Construye la siguiente tabla comparativa: M1, M2, M2int
+```{r}
+M1_info=summary(M1)
+M2_info=summary(M2)
+M2int_info=summary(M2int)
+
+v_m1=c(M1_info$r.squared, M1_info$adj.r.squared, M1_info$sigma)
+v_m2=c(M2_info$r.squared, M2_info$adj.r.squared, M2_info$sigma)
+v_m2int=c(M2int_info$r.squared, M2int_info$adj.r.squared, M2int_info$sigma)
+
+comp <- data.frame(row.names=c("R2", "R2 ajustado", "Residual standard error"))
+# M1
+comp[,1] <- v_m1
+# M2
+comp[,2] <- v_m2
+# M3
+comp[,3] <- v_m2int
+
+
+print(knitr::kable(round(comp, 3), format = "pandoc",
+                   col.names = c("M1", "M2", "M2int"), align='c'))
+```
+
+Los valores de R2 y RSE obtenidos para el modelo M1 no son buenos. La inclusion de una variable más en el modelo M2 mejora significativamente los valores de R2 y disminuye el error. Sin embargo, la inclusión de una nueva variable en el modelo M2int mejora ligeramente, pero dicha mejora no es suficiente como para justificar la inclusion de una variable más.  
+
+En conclusión, el modelo con el que mejores resultados se obtienen, y por tanto mejor se ajusta a los datos es el modelo M2.
+
+
+## 2.6 Construye el modelo de regresión lineal con todos los regresores disponibles en el fichero (Mtodas).
+
+(a) Interpretar los resultados obtenidos en comparación con los de los modelos M1, M2 y M2int considerados en los apartados anteriores.
+
+Construimos el modelo que incluye todas las varibles
+```{r}
+Mtodas=lm(solTrainY~., data=EntrenamientoXY)
+(Mtodas_info=summary(Mtodas))
+```
+
+Representamos los resultados obtenidos en una tabla comparativa
+```{r}
+v_mtodas=c(Mtodas_info$r.squared, Mtodas_info$adj.r.squared, Mtodas_info$sigma)
+comp[,4]<-v_mtodas
+print(knitr::kable(round(comp, 3), format = "pandoc",
+                   col.names = c("M1", "M2", "M2int", "Mtodas"), align='c'))
+
+```
+
+Observamos que para el modelo que incluye todas las variables regresoras se obtine un R2 mayor y un error menor que con el resto de modelos que estamos estudiando. Sin embargo al añadir todas las variables regresoras hemos añadido mucha más complejidad, puesto que con M2 teníamos un modelo de 2 variables y con Mtodas tenemos un modelo de 20 variables. Sería interesante continuar con el estudio y analizar si es posible simplificar el modelo Mtodas seleccionando variables y eliminando aquellas que no sean significativas para nuestro estudio. 
+
+
+(b) Obtén los gráficos de diagnósticos y comenta los resultados
+
+```{r}
+#par(mfrow=c(2,2))
+plot(Mtodas)
+```
+
+Las siguientes gráficas nos ayudarán a diagnosticar y validar el modelo obtenido. Veamos la interpretación de cada una de ellas:
+
+**Residuals vs Fitted**
+
+Esta gráfica muestra si los residuos tienen patrones no lineales, es decir si existe una relacion no lineal entre las variables regresoras y la variable respuesta. Por tanto nos ayuda a verficar la hipótesis de linealidad
+
+En este caso observamos que los puntos se distribuyen sin ningún patron distintivo alrededor de la linea roja, lo cual indica que no existen patrones no lineales.
+
+
+**Normal Q-Q**
+
+Esta gráfica muestra si los residuos siguen una distribución normal, por tanto nos ayuda a verficar hipótesis de normalidad.
+
+En el modelo Mtodas los residuos siguen bien la recta, no se aprecian desviaciones significativas, salvo los siguientes 3 puntos que se marcan en la gráfica: 851, 889 y 1274. Por tanto podemos verificar que se cumple la hipótesis de normalidad.
+
+**Scale location**
+
+Esta gráfica muestra si los residuos se distribuyen por igual a lo largo de los rangos de predictores, por tanto nos sirve para verificar hipótesis de igualdad de varianza (homoscedasticidad). 
+
+En el caso que nos ocupa vemos que los puntos se distribuyen igualmente alredor de la línea horizontal. La línea roja es horizontal y no tiene pendiente, lo cual verifica la hipótesis de homocedasticidad.
+
+**Residuals vs Leverage**
+
+Este gráfico nos ayuda a determinar las observaciones influencia (observaciones que afectan mucho al modelo).
+
+En nuestro caso no hay ningún caso influyente, todos los puntos están dentro de la linea de distancia de Cook.
+
+
+
+(c) Calcula los vif (factores de inflación de la varianza) de los regresores ¿Qué conclusión se obtiene?
+
+```{r}
+vif(Mtodas)
+```
+
+Valores VIF > 10 es indicativo de serios problemas de multicolinealidad. 
+
+Por tanto podemos concluir que las siguientes variables regresoras presentar problemas de multicolinealidad:
+
+MolWeight, NumAtoms, NumNonHAtoms, NumBonds, NumNonHBonds, NumMultBonds, NumAromaticBonds, NumHydrogen, NumCarbon, NumOxygen, NumRings, SurfaceArea1 y SurfaceArea2
+
+Como solución se  podrían eliminar las variables regresoras problemáticas, ya que la información de estas variables no suele afectar mucho puesto que están incluidas en las otras, y por tanto es redundante. 
+
+
+
+## 2.7 Determina el modelo resultante de una regresión paso a paso hacia adelante. Sea MHA el modelo resultante.
+
+
+```{r}
+# Modelo nulo, solo tiene el termino independiente
+null=lm(solTrainY~1, data=EntrenamientoXY)
+# Modelo con todas las variables regresoras
+full=Mtodas
+# Regresión paso a paso hacia adelante
+MHA=stepAIC(null, scope=list(lower=null, upper=full), direction="forward", trace=0)
+(MHA_info=summary(MHA))
+```
+
+El modelo resultante de la regresión paso a paso está compuesto por 16 variables regresoras.
+
+El p-valor obtenido para la variable NumCarbon es igual a  0.857673> 0.05, con lo cual aceptamos la hipótesis nula, y por tanto podemos concluir que la variable NumCarbon no es significativa y puede ser eliminada del modelo.
+
+
+
+A continuación representamos los resultados obtenidos para el modelo MHA en la tabla comparativa
+```{r}
+v_mHA=c(MHA_info$r.squared, MHA_info$adj.r.squared, MHA_info$sigma)
+comp[,5]<-v_mHA
+print(knitr::kable(round(comp, 3), format = "pandoc",
+                   col.names = c("M1", "M2", "M2int", "Mtodas", "MHA"), align='c'))
+
+```
+
+Observamos que el valor de R2 y RSE son muy similares a los obtenidos por Mtodas, con la ventaja de que el modelo MHA tiene 16 variables regresoras y el modelo Mtodas tiene 20. Con lo cual podemos concluir que el modelo MHA es mejor que Mtodas. Continua siendo interesante experimentar con los datos para determinar si es posible disminuir la complejidad del modelo eliminando variables explicativas, como por ejemplo variable NumCarbon, que no parece significativas y otras variable con problemas de multicolinealidad.
+
+
+## 2.8. Construye un gráfico para comparar R2 ajustado en los siguientes modelos, y comenta los resultados.
+
+MHA12: Modelo con las dos primeras variables (v1 y v2) que entran en la regresión paso a paso hacia adelante
+
+
+```{r}
+# Modelo con las dos primeras variables (v1 y v2) regresión paso a paso hacia adelante
+MHA12=stepAIC(null, scope=list(lower=null, upper=full), direction="forward", steps=2, trace=0)
+summary(MHA12)
+```
+
+
+```{r}
+# MHA12+(v1)2
+MHA12_1=lm(solTrainY ~ MolWeight + SurfaceArea1+ I(MolWeight^2), data = EntrenamientoXY)
+
+# MHA12+(v1)2+(v1)3
+MHA12_2=lm(solTrainY ~ MolWeight + SurfaceArea1+ I(MolWeight^2) + I(MolWeight^3), 
+           data = EntrenamientoXY)
+
+# MHA12+(v2)2
+MHA12_3=lm(solTrainY ~ MolWeight + SurfaceArea1+ I(SurfaceArea1^2), data = EntrenamientoXY)
+ 
+# MHA12+(v2)2+(v2)3
+MHA12_4=lm(solTrainY ~ MolWeight + SurfaceArea1+ I(SurfaceArea1^2) + I(SurfaceArea1^3), 
+           data = EntrenamientoXY)
+ 
+# MHA12+(v1 × v2) + (v1)2 + (v1)3 + (v2)2 + (v2)3
+MHA12_5=lm(solTrainY ~ MolWeight * SurfaceArea1 + I(MolWeight^2) + I(MolWeight^3) + 
+             I(SurfaceArea1^2) + I(SurfaceArea1^3), data = EntrenamientoXY)
+
+
+y<-c((summary(MHA12)$adj.r.squared), (summary(MHA12_1)$adj.r.squared), 
+     (summary(MHA12_2)$adj.r.squared), (summary(MHA12_3)$adj.r.squared), 
+     (summary(MHA12_4)$adj.r.squared), (summary(MHA12_5)$adj.r.squared))
+
+barplot(y,
+        main="R2 ajustado para cada modelo MHA12", 
+        ylab="R2 ajustado",
+        names=c("MHA12", "MHA12_1", "MHA12_2", "MHA12_3", "MHA12_4", "MHA12_5"),
+        col=rainbow(20, alpha = .6),
+        ylim=c(0.72, 0.75), 
+        xpd=F,
+        cex.axis=0.7, cex.names=0.7)
+```
+
+Observamos que de todos los modelos MHA12 el que presenta mayor R2 ajustado es MHA12_5, con un valor de 0.734. Este valor es peor que los obtenidos con M2, M2int, Mtodas y MHA. Con lo cual no incluiremos el modelo en la tabla comparativa ni en el estudio posterior.
+
+
+
+## 2.9 Puedes añadir cualquier otro análisis que consideres de interés.
+
+Recopilando los resultados obtenidos en la tabla comparativa
+
+```{r}
+print(knitr::kable(round(comp, 3), format = "pandoc",
+                   col.names = c("M1", "M2", "M2int", "Mtodas", "MHA"), align='c'))
+
+```
+
+
+MHA por ahora MHA es el modelo con mejores características de ajuste a los datos. Lo obtuvimos realizando la regresión paso a paso hacia adelante, veamos si mejora los resultados iterar en ambas direcciones.
+```{r}
+MHA2=stepAIC(null, scope=list(upper=full), direction="both", criterion=AIC, trace=0)
+summary(MHA2)
+```
+
+
+Vemos que el modelo resultante MHA2 tiene valores de R2 y RSE casi identicos a los obtenidos para MHA. El modelo MHA2 contiene las mismas variables regresoras que MHA excepto NumCarbon, que tal y como ya obtuvimos no era significativa y se podía eliminar.
+
+
+El modelo MHA tiene 15 variables regresoras: 
+HydrophilicFactor, 
+MolWeight, 
+NumAromaticBonds, 
+NumAtoms, 
+NumChlorine, 
+NumDblBonds, 
+NumHydrogen, 
+NumMultBonds, 
+NumNitrogen,  
+NumNonHAtoms, 
+NumNonHBonds, 
+NumOxygen, 
+NumRings, 
+NumRotBonds, 
+SurfaceArea1
+
+
+En el análisis de multicolinealidad vimos que las siguientes variables regresoras tenían problema de multicolinealidad:
+
+MolWeight, 
+NumAromaticBonds, 
+NumAtoms, 
+NumBonds, 
+NumCarbon, 
+NumHydrogen, 
+NumMultBonds, 
+NumNonHAtoms, 
+NumNonHBonds, 
+NumOxygen, 
+NumRings, 
+SurfaceArea1, 
+SurfaceArea2
+
+
+Con lo cual, vamos a eliminar las variables del modelo MHA que presentan problemas de multicolinealidad y veremos si obtenemos mejores resultados con el nuevo modelo simplificado.
+
+Por tanto, construiremos un nuevo modelo MHA3 con las siguientes variables explicativas: HydrophilicFactor, NumChlorine, NumDblBonds, NumNitrogen, NumNonHBonds y NumRotBonds
+
+
+```{r}
+MHA3=lm(solTrainY ~ HydrophilicFactor + NumChlorine + NumDblBonds + 
+          NumNitrogen + NumNonHBonds + NumRotBonds, data = EntrenamientoXY)
+summary(MHA3)
+```
+
+Observamos que en este caso el R2 es mucho mas pequeño que para el resto de modelos, esto es debido a que hemos eliminado variables regresoras importantes en el modelo. Sería necesario realizar un estudio de colienalidad entre todas las variables regresoras y eliminar solo aquellas que no estén explicadas por el resto.
+
+También podríamos estudiar si la inclusión de las variables FP eliminadas del conjunto de entrenamiento están haciendo que obtengamos peores resultados.
+
+Otro estudio que tambien podría ser interesante abordar es el de los valores outlier. Para determinar aquellos valores que estén desviando los resultados y que sea bueno limpiar de los datos observados para obtener mejores ajustes y predicciones.
+
+# 3 Cuestiones sobre el conjunto TestXY
+
+## 3.1 Construye el fichero "TestXY" de la siguiente forma:
+
+(a) Constuye un fichero "TestX" eliminando de "solTestX" todas las variables
+"FP..." que ocupan las 208 primeras posiciones.
+
+(b) Construye el fichero "TestXY" añadiendo a "TestX" la variable "solTestY".
+
+
+Construiré el conjunto de test con las variables transformadas, puesto que para entrenar usé las variables 
+transformadas, de otro modo los resultados que obtenga no serán correctos.
+
+```{r}
+TestX<-data.frame(solTestXtrans[209:ncol(solTestXtrans)])
+TestXY<-data.frame(TestX, solTestY)
+str(TestXY)
+```
+
+
+
+## 3.2 Calcula los valores ajustados por el modelo MHA12 para todos los valores de los regresores del conjunto test
+
+```{r}
+# Valores ajustados por el modelo MHA12 sobre conjunto test
+solTestY_gorro=predict(MHA12, TestX)
+head(solTestY_gorro)
+
+# Valores observados y predicciones
+lmValues=data.frame(obs=solTestY, pred=solTestY_gorro)
+head(lmValues)
+defaultSummary(lmValues)
+
+```
+
+
+## 3.3 Calcula los residuos correspondientes al modelo MHA12 para todos los valores de los regresores del conjunto test
+```{r}
+residuos=solTestY-solTestY_gorro
+head(residuos)
+```
+
+
+
+## 3.4 Calcula el RSE resultante de aplicar el modelo MHA12 sobre el conjunto test.
+```{r}
+(RSE_test=sqrt(sum((TestXY$solTestY-solTestY_gorro)^2)/(nrow(TestXY)-2)))
+```
+
+
+## 3.5 Compara el RSE sobre el conjunto entrenamiento y el test. Comenta los resultados.
+```{r}
+(RSE_entrenamiento=summary(MHA12)$sigma)
+```
+En el caso del modelo MHA12, los resultados sobre el conjunto test son mejores que sobre el conjunto de entrenamiento, el RSE es algo menor en el caso del conjunto de test.
+
+
+## 3.6. Puedes añadir cualquier otro análisis que consideres de interés.
+
+Compararemos a continuacion el valor de RSE en el conjunto test y en el conjunto entrenamiento para el modelo MHA 
+```{r}
+solTestY_gorro_MHA=predict(MHA, TestX)
+(RSE_test_MHA=sqrt(sum((TestXY$solTestY-solTestY_gorro)^2)/(nrow(TestXY)-2)))
+(RSE_entrenamiento_MHA=summary(MHA)$sigma)
+```
+
+Vemos que el error cometido al estimar sobre el conjunto de test es igual para el modelo MHA y MHA12. Sin embargo obteníamos mejores ajustes con MHA que con MHA12.
+
+
+
+A continuación compararé los resultados obtenidos los resultantes de realizar cross validacion con 300 folds
+
+```{r}
+set.seed(100)
+ctrl=trainControl(method = "cv", number=300, selectionFunction = "best") 
+lm_cross=train(x=EntrenamientoX, y=solTrainY, method = "lm", trControl =ctrl )
+lm_cross$results
+```
+
+Vemos que los resultados son mejores con el modelo obtenido con cross validación.

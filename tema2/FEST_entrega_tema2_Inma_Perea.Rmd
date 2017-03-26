@@ -1,0 +1,539 @@
+---
+title: "Relación ejercicios Tema 2"
+author: "Alumno: Inmaculada Perea Fernández"
+date: "(09/12/2016)"
+output: html_document
+---
+  
+
+**Ejemplo 1.- Considerar el conjunto de datos ChickWeight de R (data(ChickWeight)), que contiene el peso frente a la edad de 50 polluelos en diferentes días en cuatro dietas. La variable weight indica el peso, la variable Time indica la edad en días (a los 0 días, 2,4,...,20 y 21, si vive), la variable Chick indica el polluelo bajo estudio y la variable Diet indica la dieta seguida**
+
+Lectura y preparación de los datos
+
+```{r}
+#?ChickWeight
+names(ChickWeight)
+str(ChickWeight)
+head(ChickWeight)
+```
+
+**1. Calcular la tabla de frecuencias absolutas de cada una de las variables que componen los datos**
+
+```{r}
+
+FrecAbs_weight <- table(ChickWeight$weight)
+print(knitr::kable(as.data.frame(FrecAbs_weight), format = "markdown",
+                   col.names = c("Peso (gr)","Frec. absoluta"),align='c',
+                   caption="Tabla Frecuencias absolutas Peso"))
+
+FrecAbs_time <- table(ChickWeight$Time)
+print(knitr::kable(as.data.frame(FrecAbs_time), format = "markdown",
+                   col.names = c("Edad (días)","Frec. absoluta"),align='c',
+                   caption="Tabla Frecuencias absolutas Edad"))
+
+
+FrecAbs_chick <- table(ChickWeight$Chick)
+print(knitr::kable(as.data.frame(FrecAbs_chick), format = "markdown",
+                   col.names = c("Polluelo","Frec. absoluta"),align='c',
+                   caption="Polluelos"))
+
+
+FrecAbs_diet <- table(ChickWeight$Diet)
+print(knitr::kable(as.data.frame(FrecAbs_diet), format = "markdown",
+                   col.names = c("Dieta","Frec. absoluta"),align='c',
+                   caption="Dieta"))
+```
+
+
+
+
+
+
+
+**2. Estudiar los posibles outliers en el peso, dentro de cada edad.**
+
+
+```{r}
+library(foreign)
+
+outlier_weight <- boxplot(ChickWeight$weight~ChickWeight$Time,
+                          las=1, 
+                          xlab="Edad (días)",
+                          ylab="Peso (gr)",
+                          main="Peso de los polluelos dentro de cada edad",
+                          col=c("royalblue", "darkblue"),
+                          outcol="red")
+```
+
+**Resumen de la información**
+
+Valores outlier de peso (gr) que sobrepasan los límites
+```{r}
+outlier_weight$out
+```
+
+Grupo al que pertenece cada uno de los valores outlier anteriores
+```{r}
+outlier_weight$group
+```
+
+Edad (días) al que se refiere cada uno de los grupos anteriores
+```{r}
+outlier_weight$names
+```
+
+
+Existen outlier para 4 grupos de edad 0, 2, 8 y 16 días. Representaremos a continuación el gráfico boxplot para cada uno de estos 4 grupos.
+```{r}
+outlier_data0<-subset(ChickWeight, ChickWeight$Time %in% c(0))
+outlier0<-boxplot(outlier_data0$weight~outlier_data0$Time,
+        las=1, 
+        xlab="Edad (días)",
+        ylab="Peso (gr)",
+        main="Peso de los polluelos (Edad = 0 días)",
+        col=c("royalblue", "darkblue"),
+        outcol="red")
+outlier0$out
+
+outlier_data2<-subset(ChickWeight, ChickWeight$Time %in% c(2))
+outlier2<-boxplot(outlier_data2$weight~outlier_data2$Time,
+        las=1, 
+        xlab="Edad (días)",
+        ylab="Peso (gr)",
+        main="Peso de los polluelos (Edad = 2 días)",
+        col=c("royalblue", "darkblue"),
+        outcol="red")
+
+outlier2$out
+
+outlier_data8<-subset(ChickWeight, ChickWeight$Time %in% c(8))
+outlier8<-boxplot(outlier_data8$weight~outlier_data8$Time,
+        las=1, 
+        xlab="Edad (días)",
+        ylab="Peso (gr)",
+        main="Peso de los polluelos (Edad = 8 días)",
+        col=c("royalblue", "darkblue"),
+        outcol="red")
+
+outlier8$out
+
+outlier_data16<-subset(ChickWeight, ChickWeight$Time %in% c(16))
+outlier16<-boxplot(outlier_data16$weight~outlier_data16$Time,
+        las=1, 
+        xlab="Edad (días)",
+        ylab="Peso (gr)",
+        main="Peso de los polluelos (Edad = 16 días)",
+        col=c("royalblue", "darkblue"),
+        outcol="red")
+
+outlier16$out
+
+```
+
+
+**3. Calcular la tabla de frecuencias conjuntas (absolutas y marginales) del número de datos de cada polluelo en cada dieta. Añadir las frecuencias marginales.**
+
+Frecuencia conjunta absoluta
+```{r}
+FrecAbs_c_d <- table(ChickWeight$Chick, ChickWeight$Diet)
+print(knitr::kable(FrecAbs_c_d, format = "pandoc", align='c',
+                   caption="Tabla Frecuencias absolutas polluelos en cada dieta"))
+```
+
+Frecuencia marginal conjunta sumando por filas 
+```{r}
+Marginal.X=margin.table(FrecAbs_c_d,margin=1)
+print(knitr::kable(as.data.frame(Marginal.X), format = "markdown",
+                   col.names = c("Polluelo","Frec. marginal"),align='c'))
+```
+
+Frecuencia marginal conjunta sumando por columnas 
+```{r}
+Marginal.Y=margin.table(FrecAbs_c_d,margin=2)
+print(knitr::kable(as.data.frame(Marginal.Y), format = "markdown",
+                   col.names = c("Dieta","Frec. marginal"),align='c'))
+```
+
+Añadimos las distribuciones marginales en el cálculo de las tablas conjuntas
+```{r}
+tabla <- addmargins(prop.table(FrecAbs_c_d)*100)
+# Modificación de etiquetas, sustituyendo la palabra Sum.
+colnames(tabla)[5] = "Marg_Dieta"
+rownames(tabla)[51] = "Marg_Polluelo"
+round(tabla,3)
+```
+
+**4. Calcular el histograma del peso (6 grupos) en cada grupo de edad.**
+
+Cálculo del peso en cada grupo de edad
+
+```{r}
+peso0<-subset(ChickWeight, Time==0)
+peso2<-subset(ChickWeight, Time==2)
+peso4<-subset(ChickWeight, Time==4)
+peso6<-subset(ChickWeight, Time==6)
+peso8<-subset(ChickWeight, Time==8)
+peso10<-subset(ChickWeight, Time==10)
+peso12<-subset(ChickWeight, Time==12)
+peso14<-subset(ChickWeight, Time==14)
+peso16<-subset(ChickWeight, Time==16)
+peso18<-subset(ChickWeight, Time==18)
+peso20<-subset(ChickWeight, Time==20)
+peso21<-subset(ChickWeight, Time==21)
+```
+
+```{r}
+par(mfrow = c(3, 1))
+
+hist(peso0$weight, breaks=7, xlim=c(0,100), ylim=c(0,30), col="white", freq=T, main="Histograma del peso de los polluelos (Edad = 0 días)", xlab=" Peso (gr)", ylab="Frecuencia absoluta")
+
+hist(peso2$weight, breaks=7, xlim=c(0,100), ylim=c(0,30), col="gray", freq=T, main="Histograma del peso de los polluelos (Edad = 2 días)", xlab=" Peso (gr)", ylab="Frecuencia absoluta")
+
+hist(peso4$weight, breaks=7, xlim=c(0,100), ylim=c(0,30), col="red", freq=T, main="Histograma del peso de los polluelos (Edad = 4 días)", xlab=" Peso (gr)", ylab="Frecuencia absoluta")
+
+
+
+hist(peso6$weight, breaks=7, xlim=c(0,200), ylim=c(0,20), col="white", freq=T, main="Histograma del peso de los polluelos (Edad = 6 días)", xlab=" Peso (gr)", ylab="Frecuencia absoluta")
+
+hist(peso8$weight, breaks=7, xlim=c(0,200), ylim=c(0,20), col="gray", freq=T, main="Histograma del peso de los polluelos (Edad = 8 días)", xlab=" Peso (gr)", ylab="Frecuencia absoluta")
+
+hist(peso10$weight, breaks=7, xlim=c(0,200), ylim=c(0,20), col="red", freq=T, main="Histograma del peso de los polluelos (Edad = 10 días)", xlab=" Peso (gr)", ylab="Frecuencia absoluta")
+
+
+
+hist(peso12$weight, breaks=7, xlim=c(0,300), ylim=c(0,20), col="white", freq=T, main="Histograma del peso de los polluelos (Edad = 12 días)", xlab=" Peso (gr)", ylab="Frecuencia absoluta")
+
+hist(peso14$weight, breaks=7, xlim=c(0,300), ylim=c(0,20), col="grey", freq=T, main="Histograma del peso de los polluelos (Edad = 14 días)", xlab=" Peso (gr)", ylab="Frecuencia absoluta")
+
+hist(peso16$weight, breaks=7, xlim=c(0,300), ylim=c(0,20), col="red", freq=T, main="Histograma del peso de los polluelos (Edad = 16 días)", xlab=" Peso (gr)", ylab="Frecuencia absoluta")
+
+
+
+hist(peso18$weight, breaks=7, xlim=c(0,400), ylim=c(0,20), col="white", freq=T, main="Histograma del peso de los polluelos (Edad = 18 días)", xlab=" Peso (gr)", ylab="Frecuencia absoluta")
+
+hist(peso20$weight, breaks=7, xlim=c(0,400), ylim=c(0,20), col="grey", freq=T, main="Histograma del peso de los polluelos (Edad = 20 días)", xlab=" Peso (gr)", ylab="Frecuencia absoluta")
+
+hist(peso21$weight, breaks=7, xlim=c(0,400), ylim=c(0,20), col="red", freq=T, main="Histograma del peso de los polluelos (Edad = 21 días)", xlab=" Peso (gr)", ylab="Frecuencia absoluta")
+```
+
+
+
+
+
+**Ejemplo 2.- Considerar el conjunto de datos trees de R (data(trees)), que contiene la circunferencia, altura y volumen de cerezos.**
+
+```{r}
+#?trees
+names(trees)
+str(trees)
+head(trees)
+```
+
+**1. Dividir las alturas en tres grupos y realizar un histograma de las restantes variables en cada grupo definido**
+```{r}
+FrecAbs_height <- table(trees$Height)
+FrecAbs_height
+```
+
+Dividiremos las  alturas en los siguientes grupos:
+
+Grupo 1:  [60, 70)
+
+Grupo 2:  [70, 80)
+
+Grupo 3:  [80, 90)
+
+
+```{r}
+height1<-subset(trees, trees$Height>=60 & trees$Height<70)
+height2<-subset(trees, trees$Height>=70 & trees$Height<80)
+height3<-subset(trees, trees$Height>=80 & trees$Height<90)
+
+par(mfrow = c(3, 2))
+
+hist(height1$Girth, xlim=c(8,22), ylim=c(0,7), col="skyblue",main="Histograma del diámetro", xlab="Diámetro \n [60-70)", ylab="Frec. absoluta")
+
+hist(height1$Volume, xlim=c(10,80), ylim=c(0,5), col="red", main="Histograma del Volumen", xlab="Volumen \n [60-70)", ylab="Frec. absoluta")
+
+
+hist(height2$Girth, xlim=c(8,22), ylim=c(0,7), col="skyblue3", main="Histograma del diámetro", xlab="Diámetro \n [70,80)", ylab="Frec. absoluta")
+
+hist(height2$Volume, xlim=c(10,80), ylim=c(0,5), col="red3", main="Histograma del Volumen", xlab="Volumen \n [70-80)", ylab="Frec. absoluta")
+
+
+hist(height3$Girth, xlim=c(8,22), ylim=c(0,7), col="skyblue4", main="Histograma del diámetro", xlab="Diámetro \n [80,90)", ylab="Frec. absoluta")
+
+hist(height3$Volume, xlim=c(10,80), ylim=c(0,5), col="red4", main="Histograma del Volumen", xlab="Volumen \n [80-90)", ylab="Frec. absoluta")
+```
+
+
+**2. Realizar un diagrama de dispersión de la circunferencia frente al volumen diferenciando los grupos definidos por la altura.**
+```{r}
+library(ggplot2)
+
+
+plot(height1$Volume, height1$Girth, col="red", xlim=c(0,80), ylim=c(0,20), xlab="Volumen (cubic ft)", ylab="Diámetro (inches)")
+
+par(mfrow=c(1,1), new=TRUE)
+plot(height2$Volume, height2$Girth, col="blue", axes=FALSE, xlab="Volumen (cubic ft)", ylab="Diámetro (inches)")
+
+par(mfrow=c(1,1), new=TRUE)
+plot(height3$Volume, height3$Girth, col="green", axes=FALSE, xlab="Volumen (cubic ft)", ylab="Diámetro (inches)")
+
+par(mfrow=c(1,1), new=TRUE)
+legend("right", legend=c("60-70", "70-80", "80-90"), 
+       col=c("red", "blue", "green"), lty=c(1, 1, 1), 
+       lwd=c(2.5, 2.5, 2.5), cex=0.8)
+```
+
+
+**3. Realizar un gráfico de dispersión y una regresión de cada par de variables y valorar la relación existente entre ellas.**
+
+**Grirth - Height**
+```{r}
+X <- trees$Girth
+Y <- trees$Height
+
+modelo = lm(Y~X)
+summary(modelo)
+
+# Gráfico de dispersión
+plot(X,Y, col="blue", xlab="Diámetro circunferencia", ylab="Altura")
+
+# Línea de regresión
+abline(modelo, col="red")
+```
+
+Valoración:
+
+- Coeficiente de determinación (Multiple R-squared) =0.2697 < 1\n
+
+- Los datos no se ajustan bien a la recta de regresión lineal (R no está proximo a 1) \n
+
+- No se puede modelar la relación entre las variables Grirth - Height como una recta\n\n
+
+
+
+
+**Grirth - Volume**
+```{r}
+X <- trees$Girth
+Y <- trees$Volume
+
+modelo = lm(Y~X)
+summary(modelo)
+
+# Gráfico de dispersión
+plot(X,Y, col="blue", xlab="Diámetro circunferencia", ylab="Volumen")
+
+# Línea de regresión
+abline(modelo, col="red")
+```
+
+Valoración:
+
+- Coeficiente de determinación (Multiple R-squared) =0.9353 ~ 1\n
+
+- Los datos se ajustan bien a la recta de regresión lineal (R~1) \n
+
+- Se puede modelar la relación entre las variables Grirth - Volume como una recta\n
+
+- La resta de ajuste es la siguiente: Volume = -36.9435 + 5.0659 Girth
+
+
+
+
+**Height - Volume**
+```{r}
+X <- trees$Height
+Y <- trees$Volume
+
+modelo = lm(Y~X)
+summary(modelo)
+
+# Gráfico de dispersión
+plot(X,Y, col="blue", xlab="Altura", ylab="Volumen")
+
+# Línea de regresión
+abline(modelo, col="red")
+```
+
+Valoración:
+
+- Coeficiente de determinación (Multiple R-squared) =0.3579 < 1\n
+
+- Los datos no se ajustan bien a la recta de regresión lineal (R no está proximo a 1) \n
+
+- No se puede modelar la relación entre las variables Height - Volume como una recta\n
+
+
+
+
+**Ejemplo 3.- Seleccionar un fichero de datos adecuado en R para aplicar cada uno de los siguientes análisis:**
+
+
+Elijo el dataset "attenu" (The Joyner-Boore Attenuation Data)
+
+
+Lectura y preparación de los datos
+
+```{r}
+#?attenu
+names(attenu)
+str(attenu)
+head(attenu)
+```
+
+**1. Calcular la tabla de frecuencias absolutas de al menos dos variables. Obtener una tabla formateada para latex con ayuda del paquete knitr**
+
+Tabla de frecuencias absoluta variable Magnitud (mag)
+```{r}
+FrecAbs_mag <- table(attenu$mag)
+print(knitr::kable(as.data.frame(FrecAbs_mag), format = "latex",
+                   col.names = c("Magnitud","Frec. absoluta"),align='c',
+                   caption="Tabla Frecuencias absolutas Magnitud"))
+```
+
+
+Tabla de frecuencias absoluta variable Aceleracion (accel)
+```{r}
+FrecAbs_accel <- table(attenu$accel)
+print(knitr::kable(as.data.frame(FrecAbs_accel), format = "latex",
+                   col.names = c("Aceleracion (g)","Frec. absoluta"),align='c',
+                   caption="Tabla Frecuencias absolutas Aceleracion"))
+```
+
+
+Tabla de frecuencias absoluta variable Distancia hipocentro (dist)
+```{r}
+FrecAbs_dist <- table(attenu$dist)
+print(knitr::kable(as.data.frame(FrecAbs_dist), format = "latex",
+                   col.names = c("Distancia (km)","Frec. absoluta"),align='c',
+                   caption="Tabla Frecuencias absolutas Distancia"))
+```
+**2. Calcular la tabla de frecuencias (absolutas, relativas y acumuladas) formateada para latex para al menos dos variables.**
+
+
+
+**Tabla de frecuencias para la variable Distancia hipocentro (dist)**
+```{r}
+# Tabla de frecuencias absolutas
+FrecAbs_dist <- round(table(attenu$dist),3)
+
+# Tabla de frecuencias relativas
+FrecRel_dist<-round(prop.table(FrecAbs_dist),3)
+
+# Tabla de frecuencias absolutas acumuladas
+FrecAbsAcum_dist <- round(cumsum(FrecAbs_dist),3)
+
+# Tabla de frecuencias relativas acumuladas
+FrecRelAcum_dist <- round(cumsum(FrecRel_dist),3)
+
+tabla_dist=cbind(FrecAbs_dist, FrecRel_dist, FrecAbsAcum_dist, FrecRelAcum_dist)
+
+print(knitr::kable(tabla_dist, 
+                   format = "latex",
+                   col.names = c("Frec. Absolutas","Frec. Relativas", "Frec. Absol acum", "Frec. Rel. Acum"),
+                   align='c', 
+                   caption="Tabla Frecuencias Distancia"))
+```
+
+
+**Tabla de frecuencias de la Variable Aceleración (accel)**
+
+```{r}
+# Tabla de frecuencias absolutas
+FrecAbs_accel <- round(table(attenu$accel),3)
+
+# Tabla de frecuencias relativas
+FrecRel_accel <-round(prop.table(FrecAbs_accel),3)
+
+# Tabla de frecuencias absolutas acumuladas
+FrecAbsAcum_accel <- round(cumsum(FrecAbs_accel),3)
+
+# Tabla de frecuencias relativas acumuladas
+FrecRelAcum_accel <- round(cumsum(FrecRel_accel),3)
+
+tabla_accel=cbind(FrecAbs_accel, FrecRel_accel, FrecAbsAcum_accel, FrecRelAcum_accel)
+
+print(knitr::kable(tabla_accel, 
+                   format = "latex",
+                   col.names = c("Frec. Absolutas","Frec. Relativas", "Frec. Absol acum", "Frec. Rel. Acum"),
+                   align='c', 
+                   caption="Tabla Frecuencias Aceleración"))
+```
+
+
+
+**3. Aplicar al menos a tres variables las funciones de resumen descriptivo.**
+```{r}
+summary(attenu)
+```
+
+
+**4. Estudiar los posibles outliers de las variables que lo permitan (al menos dos variables). Acompañar con la gráficas adecuadas.**
+```{r}
+outlier_mag <- boxplot(attenu$mag, las=1, main="Gráfico Q-Q de Magnitud", 
+                       col="royalblue", 
+                       outcol="red")
+```
+
+```{r}
+outlier_dist <- boxplot(attenu$dist, las=1, main="Gráfico Q-Q de Distancia", 
+                       col="royalblue", 
+                       outcol="red")
+
+outlier_dist$out
+```
+
+
+```{r}
+outlier_accel <- boxplot(attenu$accel, las=1, main="Gráfico Q-Q de Aceleración", 
+                       col="royalblue", 
+                       outcol="red")
+
+outlier_accel$out
+```
+
+
+**5. Obtener el histograma de al menos una variable del conjunto de datos.**
+```{r}
+hist(attenu$mag, col="white", freq=T, main="Histograma de la Magnitud", xlab="Magnitud", ylab="Frecuencia absoluta")
+
+```
+
+```{r}
+hist(attenu$dist, col="white", freq=T, main="Histograma de la Distancia", xlab="Distancia", ylab="Frecuencia absoluta")
+
+```
+
+```{r}
+hist(attenu$accel, col="white", freq=T, main="Histograma de la Aceleración", xlab="Aceleración", ylab="Frecuencia absoluta")
+```
+
+
+**6. Seleccionar dos variables que permitan realizar un gráfico de dispersión y un análisis de regresión entre ellas.**
+
+```{r}
+X <- attenu$accel
+Y <- attenu$dist
+
+modelo = lm(Y~X)
+summary(modelo)
+
+# Gráfico de dispersión
+plot(X,Y, col="blue", xlab="Aceleración", ylab="Distancia")
+
+# Línea de regresión
+abline(modelo, col="red")
+```
+
+Valoración:
+
+- Coeficiente de determinación (Multiple R-squared) =0.2222 << 1\n
+
+- Los datos no se ajustan a la recta de regresión lineal (R no está proximo a 1) \n
+
+- No se puede modelar la relación entre las variables Distancia - Aceleración como una recta\n
+
+
